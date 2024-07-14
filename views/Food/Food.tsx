@@ -18,6 +18,7 @@ const Food = () => {
     try {
       const foodResponse = await onGetFoods();
       setFoods(foodResponse);
+      console.log("desde food", foodResponse);
     } catch (error) {
       console.log(error);
     }
@@ -91,7 +92,11 @@ const Food = () => {
       <ScrollView style={styles.content}>
         {foods?.map((meal, index) => (
           // <MealItem key={`my-meal-item-${meal.name}`} {...meal} />
-          <MealItem key={`my-meal-item-${meal.name}-${index}`} {...meal} />
+          <MealItem
+            key={`my-meal-item-${meal.name}-${index}`}
+            {...meal}
+            isAbleToAdd
+          />
         ))}
       </ScrollView>
       <AddFoodModal visible={visibleButton} onClose={handleclose} />

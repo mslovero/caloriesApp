@@ -6,19 +6,48 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { Meal, RootStackParams } from "@/types";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import useFoodStorage from "@/hooks/useFoodStorage";
-import TodayCalories from "@/components/TodayCalories";
-
+import TodayCalories, { TodayCaloriesProps } from "@/components/TodayCalories";
+import TodalMeals from "@/components/TodayMeals/TodalMeals";
+const totalCaloriesPerDay = 2000;
 const Home = () => {
   const [todayFood, setTodayFood] = useState<Meal[]>([]);
+  const [todayStatistics, setTodayStatistics] = useState<TodayCaloriesProps>({
+    consumed: 0,
+    percentage: 0,
+    remaining: 0,
+    total: totalCaloriesPerDay,
+  });
   const { onGetTodayFood } = useFoodStorage();
   const { navigate } =
     useNavigation<NativeStackNavigationProp<RootStackParams, "Home">>();
 
+  const calculateTodayStatistics = (meals: Meal[]) => {
+    try {
+      const caloriesConsumed = meals.reduce(
+        (acum, curr) => acum + Number(curr.calories),
+        0
+      );
+      const remainingCalories = totalCaloriesPerDay - caloriesConsumed;
+      const percentage = (caloriesConsumed / totalCaloriesPerDay) * 100;
+      setTodayStatistics({
+        consumed: caloriesConsumed,
+        percentage,
+        remaining: remainingCalories,
+        total: totalCaloriesPerDay,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
   const loadTodayFood = useCallback(async () => {
     try {
-      const todayFoddResponse = await onGetTodayFood();
-      setTodayFood(todayFoddResponse);
-      console.log("viendo mi response", todayFoddResponse);
+      const todayFoodResponse = await onGetTodayFood();
+      if (todayFoodResponse) {
+        setTodayFood(todayFoodResponse);
+        calculateTodayStatistics(todayFoodResponse);
+      } else {
+        setTodayFood([]);
+      }
     } catch (error) {
       setTodayFood([]);
       console.error(error);
@@ -32,7 +61,6 @@ const Home = () => {
   const actionCalories = () => {
     navigate("Food");
   };
-  console.log(todayFood);
 
   return (
     <View style={styles.container}>
@@ -52,7 +80,11 @@ const Home = () => {
           </Button>
         </View>
       </View>
-      <TodayCalories />
+      <TodayCalories {...todayStatistics} />
+      <TodalMeals
+        foods={todayFood}
+        onCompleteAddRemove={() => loadTodayFood()}
+      />
     </View>
   );
 };
